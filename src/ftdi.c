@@ -2944,7 +2944,7 @@ static unsigned char type2bit(unsigned char type, enum ftdi_chip_type chip)
 int ftdi_eeprom_build(struct ftdi_context *ftdi)
 {
     unsigned char i, j, eeprom_size_mask;
-    unsigned short checksum, value;
+    unsigned short checksum;
     unsigned char manufacturer_size = 0, product_size = 0, serial_size = 0;
     int user_area_size, free_start, free_end;
     struct ftdi_eeprom *eeprom;
@@ -3510,10 +3510,28 @@ int ftdi_eeprom_build(struct ftdi_context *ftdi)
         memcpy(output + eeprom->user_data_addr, eeprom->user_data, eeprom->user_data_size);
     }
 
-    // calculate checksum
-    checksum = 0xAAAA;
+    // calculate and update checksum
+    ftdi_eeprom_buf_update_crc(ftdi, output, eeprom->size, &checksum);
 
-    for (i = 0; i < eeprom->size/2-1; i++)
+    eeprom->initialized_for_connected_device = 1;
+    return user_area_size;
+}
+// calculate and update checksum for a eeprom buffer
+int ftdi_eeprom_buf_update_crc(struct ftdi_context *ftdi, unsigned char * buf, int size, unsigned short * crc)
+{
+    unsigned char * output = buf;
+    unsigned short checksum = 0, value = 0;
+    int i;
+
+    if (ftdi == NULL)
+        ftdi_error_return(-2,"No context");
+    if (buf == NULL)
+        ftdi_error_return(-2,"Null eeprom buffer");
+    if (crc == NULL)
+        ftdi_error_return(-2,"Null crc");
+
+    checksum = 0xAAAA;
+    for (i = 0; i < size/2-1; i++)
     {
         if ((ftdi->type == TYPE_230X) && (i == 0x12))
         {
@@ -3538,11 +3556,11 @@ int ftdi_eeprom_build(struct ftdi_context *ftdi)
         checksum = (checksum << 1) | (checksum >> 15);
     }
 
-    output[eeprom->size-2] = checksum;
-    output[eeprom->size-1] = checksum >> 8;
+    output[size-2] = checksum;
+    output[size-1] = checksum >> 8;
+    *crc = checksum;
 
-    eeprom->initialized_for_connected_device = 1;
-    return user_area_size;
+    return 0;
 }
 /* Decode the encoded EEPROM field for the FTDI Mode into a value for the abstracted
  * EEPROM structure

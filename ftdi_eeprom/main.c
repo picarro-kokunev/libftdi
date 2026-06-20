@@ -647,6 +647,10 @@ int main(int argc, char *argv[])
                     printf ("Can't read eeprom file %s.\n", filename);
                     exit (-1);
                 }
+                unsigned short crc = 0;
+                ftdi_eeprom_buf_update_crc(ftdi, eeprom_buf, my_eeprom_size, &crc);
+                printf("Updated CRC for the raw eeprom to 0x%04X\n",
+                       crc);                
 
                 printf("Flashing raw eeprom from file %s (%d bytes)\n",
                        filename, my_eeprom_size);

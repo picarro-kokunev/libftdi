@@ -620,6 +620,7 @@ extern "C"
 
     int ftdi_get_eeprom_buf(struct ftdi_context *ftdi, unsigned char * buf, int size);
     int ftdi_set_eeprom_buf(struct ftdi_context *ftdi, const unsigned char * buf, int size);
+    int ftdi_eeprom_buf_update_crc(struct ftdi_context *ftdi, unsigned char * buf, int size, unsigned short * crc);
 
     int ftdi_set_eeprom_user_data(struct ftdi_context *ftdi, const char * buf, int size);
 
